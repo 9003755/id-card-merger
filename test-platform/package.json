@@ -1,0 +1,19 @@
+{
+  "name": "ocr-test-platform",
+  "version": "1.0.0",
+  "description": "百度OCR API测试平台",
+  "main": "test-server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node test-server.js",
+    "test": "echo \"No tests specified\""
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "node-fetch": "^3.3.2"
+  },
+  "keywords": ["ocr", "baidu", "test"],
+  "author": "",
+  "license": "ISC"
+}

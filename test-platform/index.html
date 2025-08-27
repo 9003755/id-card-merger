@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>百度OCR API测试平台</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        
+        .test-section h2 {
+            color: #666;
+            margin-top: 0;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-danger {
+            background: #f44336;
+        }
+        
+        .btn-danger:hover {
+            background: #da190b;
+        }
+        
+        .btn-info {
+            background: #2196F3;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .result-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        
+        .info {
+            color: #2196F3;
+        }
+        
+        .config-section {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .file-input {
+            margin: 10px 0;
+        }
+        
+        .image-preview {
+            max-width: 300px;
+            max-height: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 百度OCR API测试平台</h1>
+        
+        <div class="config-section">
+            <h3>📋 API配置信息</h3>
+            <p><strong>API Key:</strong> <span id="apiKey">WYCtNFVBM4dh4eYvrI29Wsos</span></p>
+            <p><strong>Secret Key:</strong> <span id="secretKey">qWwWkr8u***（已隐藏）</span></p>
+            <p><strong>App ID:</strong> <span id="appId">119868043</span></p>
+        </div>
+
+        <!-- 测试1：网络连通性 -->
+        <div class="test-section">
+            <h2>🌐 测试1：网络连通性检查</h2>
+            <p>检查是否能够访问百度API服务器</p>
+            <button onclick="testNetworkConnectivity()">基础网络测试</button>
+            <button onclick="runNetworkDiagnosis()" class="btn-info">全面网络诊断</button>
+            <div id="networkResult" class="result-box"></div>
+        </div>
+
+        <!-- 测试2：获取访问令牌 -->
+        <div class="test-section">
+            <h2>🔑 测试2：获取访问令牌</h2>
+            <p>测试不同方法获取百度OCR访问令牌</p>
+            <button onclick="testTokenDirect()">方法1：前端直接调用</button>
+            <button onclick="testTokenProxy()" class="btn-info">方法2：后端代理调用</button>
+            <div id="tokenResult" class="result-box"></div>
+        </div>
+
+        <!-- 测试3：OCR识别 -->
+        <div class="test-section">
+            <h2>📄 测试3：OCR识别测试</h2>
+            <p>上传身份证图片进行OCR识别测试</p>
+            <div class="file-input">
+                <input type="file" id="imageFile" accept="image/*" onchange="previewImage()">
+                <img id="imagePreview" class="image-preview" style="display:none;">
+            </div>
+            <button onclick="testOCRDirect()" class="btn-danger">方法1：前端直接调用</button>
+            <button onclick="testOCRProxy()" class="btn-info">方法2：后端代理调用</button>
+            <button onclick="testOCRMock()" class="btn-success">方法3：模拟OCR数据</button>
+            <div id="ocrResult" class="result-box"></div>
+        </div>
+
+        <!-- 测试4：性能测试 -->
+        <div class="test-section">
+            <h2>⚡ 测试4：性能测试</h2>
+            <p>测试API调用的响应时间和成功率</p>
+            <button onclick="performanceTest()">开始性能测试</button>
+            <div class="progress" style="display:none;" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div id="performanceResult" class="result-box"></div>
+        </div>
+
+        <!-- 测试结果汇总 -->
+        <div class="test-section">
+            <h2>📊 测试结果汇总</h2>
+            <div id="summaryResult" class="result-box">
+                等待测试完成...
+            </div>
+            <button onclick="generateReport()" class="btn-info">生成测试报告</button>
+        </div>
+    </div>
+
+    <script src="test-platform.js"></script>
+</body>
+</html>

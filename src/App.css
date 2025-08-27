@@ -1,0 +1,112 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f5f5;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 40px 20px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.app-header h1 {
+  margin: 0 0 8px 0;
+  font-size: 32px;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.author-info {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  opacity: 0.85;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.app-header p {
+  margin: 0 0 30px 0;
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.mode-switcher {
+  display: inline-flex;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 4px;
+  backdrop-filter: blur(10px);
+}
+
+.mode-button {
+  padding: 12px 24px;
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.mode-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.mode-button.active {
+  background-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.app-main {
+  flex: 1;
+  padding: 40px 0;
+  background-color: #fff;
+}
+
+.app-footer {
+  background-color: #f8f9fa;
+  padding: 20px;
+  text-align: center;
+  border-top: 1px solid #e8e8e8;
+  color: #666;
+}
+
+.app-footer p {
+  margin: 0;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 30px 16px;
+  }
+  
+  .app-header h1 {
+    font-size: 24px;
+  }
+  
+  .app-header p {
+    font-size: 14px;
+  }
+  
+  .mode-switcher {
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .mode-button {
+    text-align: center;
+  }
+  
+  .app-main {
+    padding: 20px 0;
+  }
+}
