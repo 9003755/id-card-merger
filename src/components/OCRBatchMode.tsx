@@ -369,30 +369,34 @@ const OCRBatchMode: React.FC = () => {
                   {/* 正面图片 */}
                   <div className="image-pair">
                     <div className="image-label">正面</div>
-                    {item.front && (
-                      <img 
-                        src={item.front.url} 
-                        alt="身份证正面"
-                        className="preview-image"
-                      />
-                    )}
+                    <div className="image-container">
+                      {item.front && (
+                        <img 
+                          src={item.front.url} 
+                          alt="身份证正面"
+                          className="preview-image"
+                        />
+                      )}
+                    </div>
                   </div>
                   
                   {/* 反面图片 */}
                   <div className="image-pair">
                     <div className="image-label">反面</div>
-                    {item.back ? (
-                      <img 
-                        src={item.back.url} 
-                        alt="身份证反面"
-                        className="preview-image"
-                      />
-                    ) : (
-                      <div className="no-image-placeholder">
-                        <span>📄</span>
-                        <small>仅正面</small>
-                      </div>
-                    )}
+                    <div className="image-container">
+                      {item.back ? (
+                        <img 
+                          src={item.back.url} 
+                          alt="身份证反面"
+                          className="preview-image"
+                        />
+                      ) : (
+                        <div className="no-image-placeholder">
+                          <span>📄</span>
+                          <small>仅正面</small>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 

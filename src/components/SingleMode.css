@@ -90,6 +90,12 @@
   gap: 30px;
 }
 
+.upload-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+}
+
 .upload-column h3 {
   margin: 0 0 16px 0;
   color: #333;

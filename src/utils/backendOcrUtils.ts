@@ -6,7 +6,7 @@ import type { OCRResult, BaiduOCRConfig } from '../types';
 class BackendOCRService {
   private apiEndpoint: string;
 
-  constructor(apiEndpoint: string = process.env.NODE_ENV === 'production' ? '/api/ocr' : 'http://localhost:3001/api/ocr') {
+  constructor(apiEndpoint: string = process.env.NODE_ENV === 'production' ? '/.netlify/functions/ocr' : 'http://localhost:3001/api/ocr') {
     this.apiEndpoint = apiEndpoint;
   }
 
@@ -123,98 +123,120 @@ class BackendOCRService {
       const base64Image = await this.fileToBase64(imageFile);
       console.log('✅ 图片转换为Base64成功，长度:', base64Image.length);
 
-      // 首先尝试真实API
-      try {
-        const response = await fetch(this.apiEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            image: base64Image,
-            id_card_side: idCardSide,
-          })
-        });
+      // 调用真实百度OCR API
+      const response = await fetch(this.apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64Image,
+          id_card_side: idCardSide,
+        })
+      });
 
-        console.log('📡 OCR请求响应状态:', response.status);
+      console.log('📡 OCR请求响应状态:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ OCR请求失败响应:', errorText);
         
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ OCR请求失败响应:', errorText);
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // 如果是网络连接错误（404, 500等），尝试模拟数据
+        if (response.status === 404 || response.status >= 500) {
+          console.log('⚠️ 服务器连接失败，尝试模拟数据模式...');
+          return await this.useMockOCR(imageFile, idCardSide);
         }
-
-        const apiResponse = await response.json();
-        console.log('📊 OCR API响应:', {
-          success: apiResponse.success,
-          hasData: !!apiResponse.data,
-          error: apiResponse.error,
-          code: apiResponse.code,
-          processingTime: apiResponse.meta?.processingTime + 'ms'
-        });
-
-        if (!apiResponse.success) {
-          throw new Error(apiResponse.error || '识别失败');
-        }
-
-        const data = apiResponse.data;
-        const result = data.words_result;
         
-        if (!result) {
-          throw new Error('未识别到身份证信息');
-        }
-
-        let name = '';
-        let idNumber = '';
-        let confidence = 0;
-
-        if (idCardSide === 'front') {
-          name = result.姓名?.words || '';
-          idNumber = result.公民身份号码?.words || '';
-          
-          const confidences = [
-            result.姓名?.probability?.average || 0,
-            result.公民身份号码?.probability?.average || 0
-          ].filter(c => c > 0);
-          
-          confidence = confidences.length > 0 
-            ? confidences.reduce((sum, c) => sum + c, 0) / confidences.length 
-            : 0.85; // 默认较高置信度
-        } else {
-          confidence = 0.8; // 背面默认置信度
-        }
-
-        if (!name && idCardSide === 'front') {
-          throw new Error('未能识别到姓名信息');
-        }
-
-        const ocrResult = {
-          name,
-          idNumber,
-          confidence,
-          success: true,
-        };
-        
-        console.log('✅ OCR识别成功:', {
-          name: name || '未识别',
-          idNumber: idNumber || '未识别',
-          confidence: Math.round(confidence * 100) + '%'
-        });
-        
-        return ocrResult;
-        
-      } catch (apiError) {
-        console.log('⚠️ 真实API不可用，尝试模拟数据模式...');
-        
-        // 如果真实API失败，使用模拟数据
-        return await this.useMockOCR(imageFile, idCardSide);
+        // 其他错误直接报告
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
+      const apiResponse = await response.json();
+      console.log('📊 OCR API响应:', {
+        success: apiResponse.success,
+        hasData: !!apiResponse.data,
+        error: apiResponse.error,
+        code: apiResponse.code,
+        processingTime: apiResponse.meta?.processingTime + 'ms'
+      });
+
+      if (!apiResponse.success) {
+        // 检查是否是网络问题或服务器问题
+        if (apiResponse.error && (
+          apiResponse.error.includes('网络') ||
+          apiResponse.error.includes('timeout') ||
+          apiResponse.error.includes('连接') ||
+          apiResponse.code === 'NETWORK_ERROR'
+        )) {
+          console.log('⚠️ 网络问题，尝试模拟数据模式...');
+          return await this.useMockOCR(imageFile, idCardSide);
+        }
+        
+        // API业务错误直接报告
+        throw new Error(apiResponse.error || '识别失败');
+      }
+
+      const data = apiResponse.data;
+      const result = data.words_result;
+      
+      if (!result) {
+        throw new Error('未识别到身份证信息');
+      }
+
+      let name = '';
+      let idNumber = '';
+      let confidence = 0;
+
+      if (idCardSide === 'front') {
+        name = result.姓名?.words || '';
+        idNumber = result.公民身份号码?.words || '';
+        
+        const confidences = [
+          result.姓名?.probability?.average || 0,
+          result.公民身份号码?.probability?.average || 0
+        ].filter(c => c > 0);
+        
+        confidence = confidences.length > 0 
+          ? confidences.reduce((sum, c) => sum + c, 0) / confidences.length 
+          : 0.85; // 默认较高置信度
+      } else {
+        confidence = 0.8; // 背面默认置信度
+      }
+
+      if (!name && idCardSide === 'front') {
+        throw new Error('未能识别到姓名信息');
+      }
+
+      const ocrResult = {
+        name,
+        idNumber,
+        confidence,
+        success: true,
+      };
+      
+      console.log('✅ 真实OCR识别成功:', {
+        name: name || '未识别',
+        idNumber: idNumber || '未识别',
+        confidence: Math.round(confidence * 100) + '%'
+      });
+      
+      return ocrResult;
+        
     } catch (error) {
       console.error('❌ 身份证OCR识别失败:', error);
       
-      // 最后的错误处理，也尝试模拟数据
-      return await this.useMockOCR(imageFile, idCardSide);
+      // 只在网络完全无法连接时才使用模拟数据
+      if (error instanceof Error) {
+        if (error.message.includes('fetch') ||
+            error.message.includes('NetworkError') ||
+            error.message.includes('Failed to fetch')) {
+          console.log('⚠️ 网络完全无法连接，使用模拟数据模式...');
+          return await this.useMockOCR(imageFile, idCardSide);
+        }
+      }
+      
+      // 其他错误直接报告，不使用模拟数据
+      throw error;
     }
   }
 
@@ -260,11 +282,12 @@ class BackendOCRService {
             isMockData: true // 标记为模拟数据
           };
           
-          console.log('🎭 模拟OCR识别成功:', {
+          console.log('🎭 ⚠️ 模拟OCR识别成功 ⚠️ （非真实数据）:', {
             name: name || '未识别',
             idNumber: idNumber || '未识别',
             confidence: '85%（模拟数据）',
-            processingTime: mockResponse.meta?.processingTime + 'ms'
+            processingTime: mockResponse.meta?.processingTime + 'ms',
+            warning: '这是模拟数据，不是真实识别结果！'
           });
           
           return ocrResult;
@@ -284,7 +307,8 @@ class BackendOCRService {
    * 生成内置模拟数据（最后的备用方案）
    */
   private generateFallbackMockData(imageFile: File, idCardSide: 'front' | 'back'): OCRResult {
-    console.log('📋 生成内置模拟数据...');
+    console.log('📋 ⚠️ 生成内置模拟数据 ⚠️');
+    console.log('🔴 警告：这是模拟数据，不是真实的OCR识别结果！');
     
     if (idCardSide === 'front') {
       // 基于文件名生成模拟姓名
@@ -292,6 +316,8 @@ class BackendOCRService {
       const mockName = baseFileName.includes('张') ? '张三' : 
                       baseFileName.includes('李') ? '李四' : 
                       baseFileName.includes('王') ? '王五' : '测试用户';
+      
+      console.log(`🎭 模拟姓名: ${mockName} （基于文件名: ${imageFile.name}）`);
       
       return {
         name: mockName,
@@ -302,6 +328,7 @@ class BackendOCRService {
         mockType: 'fallback'
       };
     } else {
+      console.log('🎭 生成身份证背面模拟数据');
       return {
         name: '',
         idNumber: '',
